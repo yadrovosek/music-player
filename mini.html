@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data: file:; style-src 'self' 'unsafe-inline'" />
+  <style>
+    :root {
+      --green: #4ade80; --green-d: #1f7a46; --text: #e4f2e9; --muted: #8da596; --line: rgba(120,255,170,.16);
+      --font: "Copperplate Gothic Light", "Copperplate Gothic Bold", "Copperplate", "Segoe UI", sans-serif;
+      --font-bold: "Copperplate Gothic Bold", "Copperplate Gothic Light", "Copperplate", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: transparent; }
+    body { font-family: var(--font); font-style: italic; color: var(--text); user-select: none; }
+    button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+    button:focus, input:focus { outline: none; }
+    .i { width: 18px; height: 18px; display: block; flex-shrink: 0; }
+
+    .panel {
+      position: absolute; left: 8px; top: 8px; width: 380px; padding: 12px;
+      background: rgba(6, 11, 8, .95); border: 1px solid var(--line); border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.6), 0 0 18px rgba(74,222,128,.12);
+      transform: translateX(-115%); opacity: 0;
+      transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .2s;
+    }
+    body.open .panel { transform: none; opacity: 1; }
+
+    .row { display: flex; gap: 12px; align-items: center; }
+    .cover {
+      position: relative; width: 56px; height: 56px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,.6);
+      background: linear-gradient(135deg, #0f2a1a, #1d4a2e); box-shadow: 0 0 0 1px var(--line);
+    }
+    .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .txt { min-width: 0; flex: 1; }
+    #title { font-family: var(--font-bold); font-size: 15px; color: #eafff1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+    #artist { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; margin-top: 2px; }
+
+    .seek { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); margin-top: 10px; }
+    .seek input { flex: 1; }
+    .ctl { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .sp { flex: 1; }
+    .btn {
+      width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.06); border: 1px solid var(--line); transition: .15s;
+    }
+    .btn:hover { background: rgba(74,222,128,.2); }
+    .btn.play { width: 42px; height: 42px; border: none; color: #03150a; background: linear-gradient(135deg, var(--green-d), var(--green)); }
+    .btn.play .i { width: 20px; height: 20px; }
+    .vol { display: flex; align-items: center; gap: 6px; color: var(--muted); width: 104px; }
+
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 3px;
+      background: linear-gradient(90deg, var(--green) var(--p, 0%), rgba(255,255,255,.16) var(--p, 0%));
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #eafff1; box-shadow: 0 0 8px var(--green);
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h4v14H7zM13 5h4v14h-4z"/></symbol>
+      <symbol id="i-prev" viewBox="0 0 24 24"><path fill="currentColor" d="M6 5h2.2v14H6zM19 5v14L9.5 12z"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path fill="currentColor" d="M15.8 5H18v14h-2.2zM5 5v14l9.5-7z"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path fill="currentColor" d="M11.5 6v12L3 12zM21 6v12l-8.5-6z"/></symbol>
+      <symbol id="i-fwd" viewBox="0 0 24 24"><path fill="currentColor" d="M12.5 6v12L21 12zM3 6v12l8.5-6z"/></symbol>
+      <symbol id="i-vol" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></g></symbol>
+    </defs>
+  </svg>
+
+  <div class="panel" id="panel">
+    <div class="row">
+      <div class="cover"><span id="ph">♪</span><img id="cover" alt="" hidden /></div>
+      <div class="txt">
+        <div id="title">Ничего не играет</div>
+        <div id="artist"></div>
+      </div>
+    </div>
+    <div class="seek">
+      <span id="cur">0:00</span>
+      <input type="range" id="seek" min="0" max="100" step="0.1" value="0" />
+      <span id="dur">0:00</span>
+    </div>
+    <div class="ctl">
+      <button class="btn" data-cmd="prev"><svg class="i"><use href="#i-prev"/></svg></button>
+      <button class="btn" data-cmd="back"><svg class="i"><use href="#i-back"/></svg></button>
+      <button class="btn play" data-cmd="toggle"><svg class="i"><use id="play-ico" href="#i-play"/></svg></button>
+      <button class="btn" data-cmd="fwd"><svg class="i"><use href="#i-fwd"/></svg></button>
+      <button class="btn" data-cmd="next"><svg class="i"><use href="#i-next"/></svg></button>
+      <span class="sp"></span>
+      <div class="vol"><svg class="i"><use href="#i-vol"/></svg><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" /></div>
+    </div>
+  </div>
+
+  <script src="mini.js"></script>
+</body>
+</html>
